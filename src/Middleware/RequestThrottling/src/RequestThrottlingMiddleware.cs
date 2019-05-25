@@ -16,7 +16,6 @@ namespace Microsoft.AspNetCore.RequestThrottling
     public class RequestThrottlingMiddleware
     {
         private readonly RequestQueue _requestQueue;
-        private readonly RequestThrottlingOptions _options;
         private readonly RequestDelegate _next;
         private readonly ILogger _logger;
 
@@ -35,8 +34,9 @@ namespace Microsoft.AspNetCore.RequestThrottling
 
             _next = next;
             _logger = loggerFactory.CreateLogger<RequestThrottlingMiddleware>();
-            _options = options.Value;
-            _requestQueue = new RequestQueue(_options.MaxConcurrentRequests.Value);
+            _requestQueue = new RequestQueue(
+                options.Value.MaxConcurrentRequests.Value,
+                options.Value.RequestQueueLimit);
         }
 
         /// <summary>
@@ -46,8 +46,14 @@ namespace Microsoft.AspNetCore.RequestThrottling
         /// <returns>A <see cref="Task"/> that completes when the request leaves.</returns>
         public async Task Invoke(HttpContext context)
         {
-            var waitInQueueTask = _requestQueue.EnterQueue();
+            if (_requestQueue.QueueLengthExceeded)
+            {
+                context.Response.StatusCode = 503;
+                context.Abort();
+                return;
+            }
 
+            var waitInQueueTask = _requestQueue.EnterQueue();
 
             if (waitInQueueTask.IsCompletedSuccessfully)
             {
