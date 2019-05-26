@@ -36,7 +36,7 @@ namespace Microsoft.AspNetCore.SignalR.Client.Tests
 
                 var delegateConnectionFactory = new DelegateConnectionFactory(
                     testConnection.StartAsync,
-                    connection => ((TestConnection)connection).DisposeAsync());
+                    connection => connection.DisposeAsync().AsTask());
                 builder.Services.AddSingleton<IConnectionFactory>(delegateConnectionFactory);
 
                 return builder.Build();
@@ -105,7 +105,7 @@ namespace Microsoft.AspNetCore.SignalR.Client.Tests
 
                 Task DisposeAsync(ConnectionContext connection)
                 {
-                    return ((TestConnection)connection).DisposeAsync();
+                    return connection.DisposeAsync().AsTask();
                 }
 
                 await AsyncUsing(CreateHubConnection(ConnectionFactory, DisposeAsync), async connection =>
@@ -137,7 +137,7 @@ namespace Microsoft.AspNetCore.SignalR.Client.Tests
                     return new TestConnection(onDispose: createCount == 1 ? onDisposeForFirstConnection : null).StartAsync(format);
                 }
 
-                Task DisposeAsync(ConnectionContext connection) => ((TestConnection)connection).DisposeAsync();
+                Task DisposeAsync(ConnectionContext connection) => connection.DisposeAsync().AsTask();
 
                 await AsyncUsing(CreateHubConnection(ConnectionFactory, DisposeAsync), async connection =>
                 {
@@ -537,7 +537,7 @@ namespace Microsoft.AspNetCore.SignalR.Client.Tests
 
                 var delegateConnectionFactory = new DelegateConnectionFactory(
                     format => innerConnection.StartAsync(format),
-                    connection => ((TestConnection)connection).DisposeAsync());
+                    connection => connection.DisposeAsync().AsTask());
                 builder.Services.AddSingleton<IConnectionFactory>(delegateConnectionFactory);
 
                 var hubConnection = builder.Build();

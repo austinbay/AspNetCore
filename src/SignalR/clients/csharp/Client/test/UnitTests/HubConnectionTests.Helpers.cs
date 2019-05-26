@@ -13,7 +13,7 @@ namespace Microsoft.AspNetCore.SignalR.Client.Tests
 
             var delegateConnectionFactory = new DelegateConnectionFactory(
                 connection.StartAsync,
-                c => ((TestConnection)c).DisposeAsync());
+                c => c.DisposeAsync().AsTask());
 
             builder.Services.AddSingleton<IConnectionFactory>(delegateConnectionFactory);
 
